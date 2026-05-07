@@ -75,6 +75,14 @@ A production-grade expense tracker application deployed on **AWS ECS Fargate** u
 └─────────────────────────────────────────────────┘
 ```
 
+**Application Screenshots:**
+
+![Expense Tracker Dashboard](docs/application_output.png)
+*Dashboard showing total spending, category breakdown (doughnut chart), and monthly spending (bar chart)*
+
+![Add Expense Modal](docs/application_output_2.png)
+*Add Expense form — title, amount, date, category, and description*
+
 **API Endpoints:**
 
 | Method | Path | Description |
@@ -182,8 +190,14 @@ Sits in public subnets. Receives HTTP traffic and routes it to healthy ECS tasks
 - **Port 80** — production traffic → active target group
 - **Port 8080** — test traffic → CodeDeploy uses this during deployment to verify the new version before going live
 
+![ALB Listeners](docs/alb.png)
+*ALB with two listeners: port 8080 → green TG (100%), port 80 → green TG (100%) after completed deployment*
+
 ### Target Groups (Blue & Green)
 Logical groups of ECS task IP addresses. The ALB forwards traffic to registered, healthy targets. During a deployment CodeDeploy switches the ALB listener from the blue TG to the green TG.
+
+![Target Groups](docs/target_groups.png)
+*Blue and green target groups — both on port 8000, IP target type, attached to the ALB*
 
 ### ECS Fargate
 Runs Docker containers without managing EC2 servers. AWS handles the underlying compute. Each task = one running container instance. We run `desired_count = 2` tasks spread across two AZs.
@@ -193,6 +207,9 @@ Private Docker image registry. GitHub Actions pushes images here tagged with the
 
 ### RDS PostgreSQL
 Managed relational database. Runs in private DB subnets with no internet access. Only ECS tasks (via security group rule) can connect on port 5432.
+
+![RDS PostgreSQL](docs/expense-tracker-dev-postgres.png)
+*RDS instance expense-tracker-dev-postgres — PostgreSQL 16, db.t3.micro, private subnets, connected compute resources showing ECS tasks*
 
 ### SSM Parameter Store
 Secure secret storage. The database connection string (`DATABASE_URL`) is stored as a `SecureString` (KMS-encrypted). ECS task execution role has IAM permission to read it. The value is injected into the container as an environment variable at startup — never stored in the image or task definition plaintext.
@@ -206,6 +223,9 @@ All container stdout/stderr goes to log group `/ecs/expense-tracker-dev/app`. Ea
 ---
 
 ## Network Design — Deep Dive
+
+![VPC Resource Map](docs/vpc.png)
+*VPC resource map showing 6 subnets across 2 AZs, 5 route tables, and 3 network connections (IGW + 2 NAT GWs)*
 
 ### Subnet Layout
 
@@ -376,6 +396,9 @@ AFTER DEPLOYMENT — Step 5 (full shift):
 | 5 | 100% traffic shift | All :80 traffic → green. Blue tasks deregistered. |
 | 6 | Terminate original task set | Blue tasks deleted after 5 min termination wait. |
 
+![CodeDeploy Successful Deployment](docs/code_deploy-id.png)
+*CodeDeploy deployment d-5X69L466I — all 5 steps succeeded, traffic fully shifted to replacement task set (100%)*
+
 **Configuration:** `CodeDeployDefault.ECSCanary10Percent5Minutes`
 **Auto-rollback on:** `DEPLOYMENT_FAILURE`
 
@@ -484,6 +507,9 @@ backend "s3" {
   encrypt = true
 }
 ```
+
+![S3 State Bucket](docs/s3.png)
+*S3 bucket showing two folders: `env/` (Atlantis workspace state — real) and `dev/` (local default workspace — empty)*
 
 The state file lives in S3. This means:
 - Multiple people can run Terraform (Atlantis, you) and share the same state
@@ -719,6 +745,9 @@ ls /home/atlantis/.atlantis/repos/
 # ── View Atlantis locks (projects currently locked) ───────────
 # Visit: http://168.144.88.87:4141/locks
 ```
+
+![Atlantis Server Running](docs/atlantis-server.png)
+*Atlantis server on DigitalOcean — systemctl status showing active/running, with live logs of plan/apply events*
 
 **Common Atlantis issues and fixes:**
 
