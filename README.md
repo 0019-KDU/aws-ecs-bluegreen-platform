@@ -688,6 +688,9 @@ Repository Settings → Webhooks → Add webhook
   Events:         Send me everything  (or at minimum: push, pull_request, issue_comment)
 ```
 
+![GitHub Webhook Configuration](docs/webhook.png)
+*GitHub webhook — payload URL pointing to Atlantis server, "Send me everything" selected, Active*
+
 > **Important:** `issue_comment` event is required for `atlantis apply` to work.
 > Select **"Send me everything"** to avoid delivery issues with individual event checkboxes.
 
@@ -808,6 +811,9 @@ Push / PR with infra changes
 
 All 4 checks must pass before a PR can be merged.
 
+![Terraform CI Pipeline](docs/terraform-ci-pipeline.png)
+*ci.yml — all 4 jobs passed: Terraform Format, Terraform Validate, tfsec Security Scan, Atlantis Plan (enforced by Atlantis)*
+
 ### Pipeline 2: Build & Deploy (`deploy.yml`)
 
 **Triggers:** Pushes to `main` touching `expense-tracker/` or `.github/workflows/deploy.yml`
@@ -882,6 +888,9 @@ git push origin main
 │  Timeout → exit 0 (check CodeDeploy console)                    │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+![Build & Deploy Pipeline](docs/build-deploy-pipeline.png)
+*deploy.yml — all steps succeeded in 14m 28s: build & push to ECR, register task def, create CodeDeploy deployment, wait for completion*
 
 **GitHub Secrets required:**
 
